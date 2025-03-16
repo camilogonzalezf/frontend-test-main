@@ -1,115 +1,85 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import useManageAI from "./hooks/useManageAI";
+import { Layout, Row, Col, Typography, Tag, notification, Spin } from "antd";
+import Chat from "./components/Chat";
 
 export default function ChatComponent() {
   const [query, setQuery] = useState("");
-  const [sessionId] = useState("XXXXXX");
-  const [messages, setMessages] = useState([]);
+  const sessionId = "XXXXXX";
+  const {
+    messages,
+    handleStartChat,
+    loadingMessages,
+    errorMessages,
+    setErrorMessages,
+    handleGetTestHours,
+    testHours,
+    loadingTestHours,
+    handleGetWeather,
+    loadingWeather,
+  } = useManageAI(sessionId);
 
-  const handleInputChange = (e) => {
-    setQuery(e.target.value);
-  };
+  const { Header, Content } = Layout;
+  const { Title, Text } = Typography;
 
-  const startChat = async () => {
-    setMessages((prev) => [...prev, { sender: "user", text: query }]);
+  const newYorkTemperature = "20°C";
 
-    try {
-      const response = await fetch("http://localhost:8000/query", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, session_id: sessionId }),
+  const [api, contextHolder] = notification.useNotification();
+
+  useEffect(() => {
+    // handleGetTestHours();
+    // handleGetWeather();
+  }, []);
+
+  useEffect(() => {
+    if (errorMessages) {
+      api.error({
+        message: "Error",
+        description: errorMessages,
       });
-
-      if (!response.ok) {
-        console.error("Error answer:", response.statusText);
-        return;
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-      let aiResponse = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-
-        const events = chunk.split("\n\n");
-        for (const eventBlock of events) {
-          if (!eventBlock.trim()) continue;
-          const lines = eventBlock.split("\n").map((line) => line.trim());
-          let eventType = "";
-          let data = "";
-
-          for (const line of lines) {
-            if (line.startsWith("event:")) {
-              eventType = line.replace("event:", "").trim();
-            }
-            if (line.startsWith("data:")) {
-              data += line.replace("data:", "").trim();
-            }
-          }
-
-          if (eventType === "chunk") {
-            const separated = data.replace(/([a-z])([A-Z])/g, "$1 $2");
-            aiResponse += separated + " ";
-            setMessages((prev) => {
-              const withoutTemp = prev.filter((m) => m.sender !== "ai_temp");
-              return [...withoutTemp, { sender: "ai_temp", text: aiResponse }];
-            });
-          }
-        }
-      }
-
-      setMessages((prev) => {
-        const withoutTemp = prev.filter((m) => m.sender !== "ai_temp");
-        return [...withoutTemp, { sender: "ai", text: aiResponse }];
-      });
-    } catch (error) {
-      console.error("Error en fetch:", error);
+      setErrorMessages(null);
     }
-
-    setQuery("");
-  };
+  }, [errorMessages, api]);
 
   return (
-    <div>
-      <div
-        style={{
-          border: "1px solid #ccc",
-          padding: "10px",
-          height: "300px",
-          overflowY: "scroll",
-          marginBottom: "10px",
-        }}
-      >
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            style={{
-              marginBottom: "10px",
-              textAlign: msg.sender === "user" ? "right" : "left",
-            }}
-          >
-            <strong>{msg.sender === "user" ? "Tú" : "IA"}:</strong> {msg.text}
-          </div>
-        ))}
-      </div>
-      <div>
-        <input
-          type="text"
-          placeholder="Type..."
-          value={query}
-          onChange={handleInputChange}
-          style={{ width: "80%", padding: "8px" }}
+    <Layout style={{ minHeight: "100vh" }}>
+      {loadingTestHours && <Spin size="large" fullscreen />}
+      {contextHolder}
+      <Header style={{ background: "#fff", padding: "0 20px" }}>
+        <Row justify="space-between" align="middle" gutter={[16, 16]}>
+          <Col xs={24} sm={12}>
+            <Title level={4} style={{ margin: 0 }}>
+              New York Temperature: {newYorkTemperature}
+            </Title>
+          </Col>
+          <Col xs={24} sm={12}>
+            <div>
+              <Text strong>Test Drive Hours: </Text>
+              {loadingTestHours && <Spin size="small" />}
+              {testHours?.map((time, index) => (
+                <Tag key={index} style={{ margin: "0 4px" }}>
+                  {time}
+                </Tag>
+              ))}
+            </div>
+          </Col>
+        </Row>
+      </Header>
+      <Content style={{ padding: "20px" }}>
+        <Chat
+          query={query}
+          messages={messages}
+          loadingMessages={loadingMessages}
+          onSetQuery={setQuery}
+          startChat={handleStartChat}
         />
-        <button
-          onClick={startChat}
-          style={{ padding: "8px 12px", marginLeft: "5px" }}
-        >
-          Send
-        </button>
-      </div>
-    </div>
+      </Content>
+    </Layout>
   );
 }
+
+/*
+
+
+*/
