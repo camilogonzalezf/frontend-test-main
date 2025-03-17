@@ -39,6 +39,7 @@ export default function ChatComponent() {
 
   useEffect(() => {
     handleGetInfo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function ChatComponent() {
       });
       setErrorMessages(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [errorMessages, errorGeneralInfo, api]);
 
   const cardsInfo = [
@@ -91,8 +93,9 @@ export default function ChatComponent() {
         <Row gutter={[16, 16]}>
           <Col xs={24} md={8}>
             <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-              {cardsInfo?.map((card: any) => (
+              {cardsInfo?.map((card: any, index: number) => (
                 <CardInfo
+                  key={index}
                   title={card.title}
                   content={card.content}
                   type={card.type}
