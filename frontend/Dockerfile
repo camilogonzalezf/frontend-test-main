@@ -7,7 +7,6 @@ RUN rm -rf .next node_modules
 
 # Copy package files
 COPY package*.json ./
-COPY package-lock.json ./
 
 # Install dependencies
 RUN npm cache clean --force && \
@@ -25,6 +24,12 @@ ENV APP_PASSWORD=${APP_PASSWORD}
 
 ARG OPENAI_API_KEY
 ENV OPENAI_API_KEY=${OPENAI_API_KEY}
+
+ARG NEXT_APP_HOST_DOMAIN
+ENV NEXT_APP_HOST_DOMAIN=${NEXT_APP_HOST_DOMAIN}
+
+ARG NEXT_APP_QUERY_URL
+ENV NEXT_APP_QUERY_URL=${NEXT_APP_QUERY_URL}
 
 EXPOSE 3000
 

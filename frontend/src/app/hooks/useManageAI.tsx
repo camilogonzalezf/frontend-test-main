@@ -1,29 +1,24 @@
 import { useState } from "react";
-import {
-  startSSEStream,
-  getHoursAvailable,
-  getWeather,
-} from "../services/QueryAI.service";
+import { startSSEStream, getGeneralInfo } from "../services/QueryAI.service";
 
 const useManageAI = (sessionId: string) => {
   //@ts-ignore
   const [messages, setMessages] = useState<any[]>([]);
-  const [testHours, setTestHours] = useState<any[]>([]);
-  const [weather, setWeather] = useState<any[]>([]);
   const [errorMessages, setErrorMessages] = useState<string | null>(null);
-  const [errorTestHours, setErrorTestHours] = useState<string | null>(null);
+  const [errorGeneralInfo, setErrorGeneralInfo] = useState<string | null>(null);
   const [loadingMessages, setLoadingMessages] = useState(false);
-  const [loadingTestHours, setLoadingTestHours] = useState(false);
-  const [loadingWeather, setLoadingWeather] = useState(false);
+  const [loadingGeneralInfo, setLoadingGeneralInfo] = useState(false);
+  const [disabledChat, setDisabledChat] = useState(false);
+
+  const [weatherValue, setWeatherValue] = useState("");
+  const [dealershipAddress, setDealershipAddress] = useState("");
+  const [testHours, setTestHOurs] = useState<any[]>([]);
 
   const OnLoadingMessage = () => setLoadingMessages(true);
   const OnLoadedMessage = () => setLoadingMessages(false);
 
-  const OnLoadingTestHours = () => setLoadingTestHours(true);
-  const OnLoadedTestHours = () => setLoadingTestHours(false);
-
-  const OnLoadingWeather = () => setLoadingWeather(true);
-  const OnLoadedWeather = () => setLoadingWeather(false);
+  const OnLoadingGeneralInfo = () => setLoadingGeneralInfo(true);
+  const OnLoadedGeneralInfo = () => setLoadingGeneralInfo(false);
 
   const handleStartChat = async (query: string) => {
     setMessages((prev) => [...prev, { sender: "user", text: query }]);
@@ -52,53 +47,72 @@ const useManageAI = (sessionId: string) => {
       sessionId,
       onChunk,
       setErrorMessages,
+      setDisabledChat,
       onEnd,
       OnLoadingMessage,
       OnLoadedMessage
     );
   };
 
-  const handleGetTestHours = async () => {
-    const onTestHours = (messages: any) => {
-      const toolOutput = messages?.find(
-        (message: any) => message?.eventType === "tool_output"
-      );
+  const handleGetInfo = async () => {
+    const query =
+      "give me , weather in New york, dealership address and Appointment availability";
 
+    const onGeneralInfo = (messages: any) => {
+      const checkAppointment: any = messages.find(
+        (message: any) =>
+          message?.data?.includes("check_appointment_availability") &&
+          message?.eventType === "tool_output"
+      );
       let testHoursConfig: any = [];
-      if (toolOutput?.data) {
-        const objectToolOutput = JSON.parse(toolOutput?.data);
-        let outputStr = objectToolOutput.output;
+      if (checkAppointment?.data) {
+        const objectcheckAppointment = JSON.parse(checkAppointment?.data);
+        let outputStr = objectcheckAppointment.output;
         outputStr = outputStr.replace(/^"|"$/g, "");
         outputStr = outputStr.replace(/^```|```$/g, "");
         testHoursConfig = eval(outputStr);
       }
-      setTestHours(testHoursConfig);
-    };
 
-    await getHoursAvailable(
-      sessionId,
-      onTestHours,
-      setErrorTestHours,
-      OnLoadingTestHours,
-      OnLoadedTestHours
-    );
-  };
+      setTestHOurs(testHoursConfig);
 
-  const handleGetWeather = async () => {
-    const onSetWeather = (messages: any) => {
-      const toolOutput = messages?.find(
-        (message: any) => message?.eventType === "tool_output"
+      const weatherElement: any = messages.find(
+        (message: any) =>
+          message?.data?.includes("get_weather") &&
+          message?.eventType === "tool_output"
       );
-      const weatherConfig = JSON.parse(toolOutput);
-      // setWeather()
+
+      let weatherConfig: any = "";
+      if (weatherElement?.data) {
+        const objectcheckWeather = JSON.parse(weatherElement?.data);
+        let outputStr = objectcheckWeather.output;
+        weatherConfig = outputStr;
+      }
+
+      setWeatherValue(weatherConfig);
+
+      const dealerAddressElement: any = messages.find(
+        (message: any) =>
+          message?.data?.includes("get_dealership_address") &&
+          message?.eventType === "tool_output"
+      );
+
+      let dealerAddressConfig: any = "";
+      if (dealerAddressElement?.data) {
+        const objectcheckDealer = JSON.parse(dealerAddressElement?.data);
+        let outputStr = objectcheckDealer.output;
+        dealerAddressConfig = outputStr;
+      }
+
+      setDealershipAddress(dealerAddressConfig);
     };
 
-    await getWeather(
+    await getGeneralInfo(
+      query,
       sessionId,
-      onSetWeather,
-      setErrorTestHours,
-      OnLoadingWeather,
-      OnLoadedWeather
+      onGeneralInfo,
+      setErrorGeneralInfo,
+      OnLoadingGeneralInfo,
+      OnLoadedGeneralInfo
     );
   };
 
@@ -108,11 +122,14 @@ const useManageAI = (sessionId: string) => {
     errorMessages,
     handleStartChat,
     setErrorMessages,
-    handleGetTestHours,
+    handleGetInfo,
+    loadingGeneralInfo,
     testHours,
-    loadingTestHours,
-    handleGetWeather,
-    loadingWeather,
+    weatherValue,
+    dealershipAddress,
+    errorGeneralInfo,
+    disabledChat,
+    setDisabledChat,
   };
 };
 
