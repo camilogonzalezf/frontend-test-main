@@ -50,6 +50,7 @@ const Chat: React.FC<{
     if (!loadingMessages) {
       onDisabledChat(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingMessages]);
 
   return (
