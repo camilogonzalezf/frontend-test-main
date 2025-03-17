@@ -1,16 +1,28 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Card, Input, Button, List, Typography, Space, Spin } from "antd";
-import useManageAI from "../hooks/useManageAI";
+import React, { useEffect, useRef } from "react";
+import { Card, Input, Button, List, Typography, Space } from "antd";
+
+import { WechatOutlined } from "@ant-design/icons";
+
 const { Text } = Typography;
 
 import "./styles.css";
 const Chat: React.FC<{
   messages: any[];
   loadingMessages: boolean;
+  disabledChat: boolean;
   query: string;
   onSetQuery: (element: string) => void;
   startChat: any;
-}> = ({ messages, loadingMessages, query, onSetQuery, startChat }) => {
+  onDisabledChat: any;
+}> = ({
+  messages,
+  loadingMessages,
+  query,
+  onSetQuery,
+  startChat,
+  disabledChat,
+  onDisabledChat,
+}) => {
   const listRef = useRef(null);
 
   const displayedMessages = messages.filter(
@@ -22,6 +34,7 @@ const Chat: React.FC<{
   };
 
   const handleSend = async () => {
+    onDisabledChat(true);
     await startChat(query);
     onSetQuery("");
   };
@@ -33,16 +46,24 @@ const Chat: React.FC<{
     }
   }, [displayedMessages, loadingMessages]);
 
+  useEffect(() => {
+    if (!loadingMessages) {
+      onDisabledChat(false);
+    }
+  }, [loadingMessages]);
+
   return (
     <Card
       title={
         <span style={{ color: "#30c463", fontWeight: "bolder" }}>
+          <span>
+            <WechatOutlined style={{ fontSize: "32px", marginRight: "10px" }} />
+          </span>
           Chat with Lex
         </span>
       }
       style={{
         margin: "0 auto",
-        maxWidth: 600,
         width: "100%",
       }}
     >
@@ -75,7 +96,6 @@ const Chat: React.FC<{
       </div>
       {loadingMessages && (
         <div style={{ textAlign: "center", marginBottom: 16 }}>
-          {/* <Spin indicator={customIcon} /> */}
           <div className="loader"></div>
         </div>
       )}
@@ -85,8 +105,9 @@ const Chat: React.FC<{
           placeholder="Type your message..."
           value={query}
           onChange={handleInputChange}
+          onPressEnter={handleSend}
         />
-        <Button type="primary" onClick={handleSend}>
+        <Button type="primary" onClick={handleSend} disabled={disabledChat}>
           Send
         </Button>
       </Space.Compact>

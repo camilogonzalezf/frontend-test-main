@@ -1,85 +1,119 @@
 "use client";
 import { useState, useEffect } from "react";
 import useManageAI from "./hooks/useManageAI";
-import { Layout, Row, Col, Typography, Tag, notification, Spin } from "antd";
+import { Layout, Row, Col, notification, Spin, Space } from "antd";
+
+import {
+  CloudOutlined,
+  EnvironmentOutlined,
+  CalendarOutlined,
+  CheckCircleOutlined,
+} from "@ant-design/icons";
+
 import Chat from "./components/Chat";
+import CardInfo from "./components/CardInfo";
 
 export default function ChatComponent() {
   const [query, setQuery] = useState("");
+
   const sessionId = "XXXXXX";
+
   const {
     messages,
     handleStartChat,
     loadingMessages,
     errorMessages,
     setErrorMessages,
-    handleGetTestHours,
+    handleGetInfo,
+    loadingGeneralInfo,
     testHours,
-    loadingTestHours,
-    handleGetWeather,
-    loadingWeather,
+    weatherValue,
+    dealershipAddress,
+    errorGeneralInfo,
+    disabledChat,
+    setDisabledChat,
   } = useManageAI(sessionId);
 
-  const { Header, Content } = Layout;
-  const { Title, Text } = Typography;
-
-  const newYorkTemperature = "20°C";
-
+  const { Content } = Layout;
   const [api, contextHolder] = notification.useNotification();
 
   useEffect(() => {
-    // handleGetTestHours();
-    // handleGetWeather();
+    handleGetInfo();
   }, []);
 
   useEffect(() => {
-    if (errorMessages) {
+    if (errorMessages || errorGeneralInfo) {
+      const text = errorMessages
+        ? errorMessages
+        : errorGeneralInfo
+        ? errorGeneralInfo
+        : "API error";
       api.error({
         message: "Error",
-        description: errorMessages,
+        description: text,
       });
       setErrorMessages(null);
     }
-  }, [errorMessages, api]);
+  }, [errorMessages, errorGeneralInfo, api]);
+
+  const cardsInfo = [
+    {
+      type: "text",
+      title: "Weather information",
+      content: weatherValue,
+      icon: <CloudOutlined />,
+    },
+    {
+      type: "text",
+      title: "Dealership address",
+      content: dealershipAddress,
+      icon: <EnvironmentOutlined />,
+    },
+    {
+      type: "tag",
+      title: "Appointment availability today",
+      content: testHours,
+      icon: <CalendarOutlined />,
+    },
+    {
+      type: "text",
+      title: "Appointment confirmation",
+      content: "You have appointments: 17th March 2025",
+      icon: <CheckCircleOutlined />,
+    },
+  ];
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      {loadingTestHours && <Spin size="large" fullscreen />}
+    <Layout style={{ minHeight: "100vh", padding: "20px" }}>
+      {loadingGeneralInfo && <Spin size="large" fullscreen />}
       {contextHolder}
-      <Header style={{ background: "#fff", padding: "0 20px" }}>
-        <Row justify="space-between" align="middle" gutter={[16, 16]}>
-          <Col xs={24} sm={12}>
-            <Title level={4} style={{ margin: 0 }}>
-              New York Temperature: {newYorkTemperature}
-            </Title>
-          </Col>
-          <Col xs={24} sm={12}>
-            <div>
-              <Text strong>Test Drive Hours: </Text>
-              {loadingTestHours && <Spin size="small" />}
-              {testHours?.map((time, index) => (
-                <Tag key={index} style={{ margin: "0 4px" }}>
-                  {time}
-                </Tag>
+      <Content>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={8}>
+            <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+              {cardsInfo?.map((card: any) => (
+                <CardInfo
+                  title={card.title}
+                  content={card.content}
+                  type={card.type}
+                  icon={card.icon}
+                />
               ))}
-            </div>
+            </Space>
+          </Col>
+          <Col xs={24} md={16}>
+            <Chat
+              query={query}
+              messages={messages}
+              loadingMessages={loadingMessages}
+              onSetQuery={setQuery}
+              startChat={handleStartChat}
+              disabledChat={disabledChat}
+              onDisabledChat={setDisabledChat}
+            />
           </Col>
         </Row>
-      </Header>
-      <Content style={{ padding: "20px" }}>
-        <Chat
-          query={query}
-          messages={messages}
-          loadingMessages={loadingMessages}
-          onSetQuery={setQuery}
-          startChat={handleStartChat}
-        />
       </Content>
     </Layout>
   );
 }
-
-/*
-
-
-*/
